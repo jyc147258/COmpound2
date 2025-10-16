@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>想和你和好</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        /* 微信专用优化样式 */
+        * {
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+        
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            position: relative;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+        
+        .floating-heart {
+            position: absolute;
+            font-size: 20px;
+            opacity: 0.7;
+            animation: float 6s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .floating-object {
+            position: absolute;
+            opacity: 0.8;
+            animation: float 8s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        .title {
+            font-size: 32px; 
+            color: #e66465; 
+            text-align: center; 
+            margin-bottom: 40px; 
+            animation: heartbeat 1.5s infinite ease-in-out;
+            padding: 0 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .counter {
+            color: #fff;
+            background: rgba(255, 107, 107, 0.8);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* 按钮容器使用横向排列 */
+        .btn-container {
+            display: flex; 
+            gap: 15px; 
+            width: 100%; 
+            max-width: 90%; 
+            position: relative; 
+            z-index: 2;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            min-height: 120px;
+        }
+        
+        .action-btn {
+            padding: 18px 0; 
+            border: none; 
+            border-radius: 50px; 
+            font-size: 22px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            -webkit-appearance: none;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            max-width: 350px;
+        }
+        
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .action-btn:hover::before {
+            left: 100%;
+        }
+        
+        .accept-btn {
+            background: linear-gradient(45deg, #e66465, #ff6b6b); 
+            color: white;
+            z-index: 3;
+            transition: all 0.5s ease;
+            margin-bottom: 20px;
+        }
+        
+        .refuse-btn {
+            background: linear-gradient(45deg, #f1f1f1, #e0e0e0); 
+            color: #666; 
+            position: relative;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+        
+        .signature {
+            position: fixed; 
+            bottom: 30px; 
+            color: #999; 
+            font-size: 16px; 
+            z-index: 2;
+            animation: bounce 2s infinite;
+        }
+        
+        .message-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            max-width: 80%;
+        }
+        
+        .message-popup.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+            z-index: 1000;
+        }
+
+        .sparkle {
+            position: absolute;
+            color: #fff;
+            opacity: 0;
+            z-index: 10;
+            animation: sparkle 1s forwards;
+        }
+
+        .poem {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #fff5f5;
+            border-radius: 10px;
+            font-style: italic;
+            color: #8b5a2b;
+        }
+        
+        .poem-author {
+            font-size: 14px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes sparkle {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(230, 100, 101, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(230, 100, 101, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(230, 100, 101, 0); }
+        }
+        
+        /* 微信浏览器特殊优化 */
+        @media (max-width: 768px) {
+            .btn-container {
+                flex-direction: column;
+                max-width: 350px;
+            }
+            
+            .title {
+                font-size: 26px;
+                margin-bottom: 30px;
+            }
+            
+            .action-btn {
+                padding: 16px 0;
+                font-size: 20px;
+            }
+
+            .refuse-buttons {
+                display: flex;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .refuse-buttons .refuse-btn {
+                flex: 1;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .refuse-buttons {
+                display: flex;
+                gap: 15px;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .refuse-buttons .refuse-btn {
+                flex: 0 0 auto;
+                min-width: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 漂浮元素 -->
+    <div id="floatingElements"></div>
+    
+    <div class="title">要不我们和好吧 💕</div>
+    <div class="counter" id="counter">已拒绝 <span id="refuseCount">0</span> 次</div>
+    
+    <div class="btn-container" id="btnContainer">
+        <button class="action-btn accept-btn pulse" id="acceptBtn">💖 同意和好</button>
+        
+        <div class="refuse-buttons" id="refuseButtons">
+            <button class="action-btn refuse-btn" id="refuseBtn1">😠 拒绝</button>
+            <button class="action-btn refuse-btn" id="refuseBtn2">😤 不要</button>
+            <button class="action-btn refuse-btn" id="refuseBtn3">🙅‍♀️ 不行</button>
+        </div>
+    </div>
+    
+    <div class="signature">—— 蒋易辰</div>
+    
+    <!-- 弹窗 -->
+    <div class="message-popup" id="messagePopup">
+        <h3 id="popupTitle">标题</h3>
+        <p id="popupMessage">消息内容</p>
+        <div id="poemContainer" class="poem" style="display: none;"></div>
+        <div id="poemAuthor" class="poem-author" style="display: none;"></div>
+        <button class="action-btn accept-btn" onclick="closePopup()" style="margin-top: 15px;">关闭</button>
+    </div>
+    
+    <script>
+        // 创建漂浮元素
+        function createFloatingElements() {
+            const container = document.getElementById('floatingElements');
+            const elements = ['💕', '💖', '💝', '💗', '💓', '🌸', '✨', '💌', '💞'];
+            
+            for (let i = 0; i < 20; i++) {
+                const element = document.createElement('div');
+                element.className = Math.random() > 0.5 ? 'floating-heart' : 'floating-object';
+                element.textContent = elements[Math.floor(Math.random() * elements.length)];
+                element.style.left = Math.random() * 100 + 'vw';
+                element.style.top = Math.random() * 100 + 'vh';
+                element.style.animationDelay = Math.random() * 6 + 's';
+                element.style.fontSize = (Math.random() * 15 + 15) + 'px';
+                container.appendChild(element);
+            }
+        }
+        
+        // 弹窗控制
+        function showPopup(title, message, poem = null, author = null) {
+            document.getElementById('popupTitle').textContent = title;
+            document.getElementById('popupMessage').textContent = message;
+            
+            const poemContainer = document.getElementById('poemContainer');
+            const poemAuthor = document.getElementById('poemAuthor');
+            
+            // 显示或隐藏古诗
+            if (poem && author) {
+                poemContainer.textContent = poem;
+                poemAuthor.textContent = "—— " + author;
+                poemContainer.style.display = "block";
+                poemAuthor.style.display = "block";
+            } else {
+                poemContainer.style.display = "none";
+                poemAuthor.style.display = "none";
+            }
+            
+            document.getElementById('messagePopup').classList.add('show');
+        }
+        
+        function closePopup() {
+            document.getElementById('messagePopup').classList.remove('show');
+        }
+        
+        // 创建彩色纸屑
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#e66465', '#a8e6cf', '#dcedc1', '#ffd3b6', '#ffaaa5', '#ff8b94'];
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = '-10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                confetti.style.width = (Math.random() * 8 + 4) + 'px';
+                confetti.style.height = (Math.random() * 8 + 4) + 'px';
+                document.body.appendChild(confetti);
+                
+                // 动画
+                setTimeout(() => {
+                    confetti.style.opacity = '1';
+                    confetti.style.transform = `translateY(100vh) rotate(${Math.random() * 720}deg)`;
+                    confetti.style.transition = `all ${Math.random() * 1 + 1}s ease-out`;
+                }, 10);
+                
+                // 移除
+                setTimeout(() => {
+                    confetti.remove();
+                }, 2500);
+            }
+        }
+
+        // 创建点击效果
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.textContent = '✨';
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            sparkle.style.fontSize = (Math.random() * 10 + 15) + 'px';
+            document.body.appendChild(sparkle);
+            
+            setTimeout(() => {
+                sparkle.remove();
+            }, 1000);
+        }
+        
+        const acceptBtn = document.getElementById('acceptBtn');
+        const refuseBtns = [
+            document.getElementById('refuseBtn1'),
+            document.getElementById('refuseBtn2'),
+            document.getElementById('refuseBtn3')
+        ];
+        const refuseCountEl = document.getElementById('refuseCount');
+        const btnContainer = document.getElementById('btnContainer');
+        const refuseButtonsContainer = document.getElementById('refuseButtons');
+        
+        let refuseCount = 0;
+        let acceptScale = 1;
+        // 限制最大缩放比例，避免按钮过大
+        const maxAcceptScale = 1.5;
+        // 按钮最小间距
+        const minButtonGap = 15;
+
+        // 简单易懂的伤心古诗
+        const sadPoems = [
+            {
+                content: "相见时难别亦难，东风无力百花残。",
+                author: "李商隐《无题》"
+            },
+            {
+                content: "独在异乡为异客，每逢佳节倍思亲。",
+                author: "王维《九月九日忆山东兄弟》"
+            },
+            {
+                content: "问君能有几多愁？恰似一江春水向东流。",
+                author: "李煜《虞美人》"
+            },
+            {
+                content: "抽刀断水水更流，举杯消愁愁更愁。",
+                author: "李白《宣州谢脁楼饯别校书叔云》"
+            },
+            {
+                content: "剪不断，理还乱，是离愁。别是一般滋味在心头。",
+                author: "李煜《相见欢》"
+            },
+            {
+                content: "此情可待成追忆，只是当时已惘然。",
+                author: "李商隐《锦瑟》"
+            }
+        ];
+
+        // 初始化拒绝按钮位置
+        function initRefusePos() {
+            // 重置为相对定位
+            refuseButtonsContainer.style.position = 'relative';
+            refuseButtonsContainer.style.width = '100%';
+            
+            refuseBtns.forEach(btn => {
+                btn.style.position = 'relative';
+                btn.style.left = 'auto';
+                btn.style.top = 'auto';
+                btn.style.transform = 'none';
+            });
+        }
+        
+        // 生成随机位置
+        function getRandomPosition(btn) {
+            const containerRect = btnContainer.getBoundingClientRect();
+            const btnWidth = btn.offsetWidth;
+            const btnHeight = btn.offsetHeight;
+            
+            // 确保按钮保持在视口内
+            const viewportPadding = 30;
+            const maxX = window.innerWidth - btnWidth - viewportPadding;
+            const maxY = window.innerHeight - btnHeight - viewportPadding;
+            
+            // 计算同意按钮位置，避免重叠
+            const acceptRect = acceptBtn.getBoundingClientRect();
+            
+            let x, y;
+            let attempts = 0;
+            
+            // 尝试找到不与同意按钮重叠的位置
+            do {
+                x = viewportPadding + Math.random() * (maxX - viewportPadding);
+                y = viewportPadding + Math.random() * (maxY - viewportPadding);
+                
+                // 检查是否与同意按钮重叠
+                const tooClose = Math.abs(x + btnWidth/2 - (acceptRect.left + acceptRect.width/2)) < (acceptRect.width/2 + btnWidth/2 + minButtonGap) &&
+                                Math.abs(y + btnHeight/2 - (acceptRect.top + acceptRect.height/2)) < (acceptRect.height/2 + btnHeight/2 + minButtonGap);
+                
+                if (!tooClose) break;
+                
+                attempts++;
+            } while (attempts < 50); // 尝试50次后放弃，避免无限循环
+            
+            // 转换为相对于容器的位置
+            return {
+                x: x - containerRect.left,
+                y: y - containerRect.top
+            };
+        }
+
+        // 检查两个按钮是否重叠
+        function checkOverlap(btn1, btn2) {
+            const rect1 = btn1.getBoundingClientRect();
+            const rect2 = btn2.getBoundingClientRect();
+            
+            return !(
+                rect1.right < rect2.left + minButtonGap ||
+                rect1.left > rect2.right - minButtonGap ||
+                rect1.bottom < rect2.top + minButtonGap ||
+                rect1.top > rect2.bottom - minButtonGap
+            );
+        }
+
+        // 移动所有拒绝按钮到新的随机位置
+        function moveAllRefuseButtons() {
+            // 设置容器为相对定位，按钮为绝对定位
+            refuseButtonsContainer.style.position = 'absolute';
+            refuseButtonsContainer.style.width = '100%';
+            refuseButtonsContainer.style.height = '100%';
+            
+            // 先为所有按钮设置新位置
+            const newPositions = [];
+            refuseBtns.forEach(btn => {
+                btn.style.position = 'absolute';
+                const pos = getRandomPosition(btn);
+                newPositions.push(pos);
+            });
+            
+            // 检查按钮之间是否重叠，如果重叠则重新定位
+            for (let i = 0; i < refuseBtns.length; i++) {
+                for (let j = i + 1; j < refuseBtns.length; j++) {
+                    if (checkOverlap(refuseBtns[i], refuseBtns[j])) {
+                        // 如果重叠，重新定位第二个按钮
+                        const newPos = getRandomPosition(refuseBtns[j]);
+                        newPositions[j] = newPos;
+                        refuseBtns[j].style.left = newPos.x + 'px';
+                        refuseBtns[j].style.top = newPos.y + 'px';
+                    }
+                }
+            }
+            
+            // 应用新位置
+            refuseBtns.forEach((btn, index) => {
+                btn.style.left = newPositions[index].x + 'px';
+                btn.style.top = newPositions[index].y + 'px';
+            });
+        }
+
+        // 初始化
+        createFloatingElements();
+        initRefusePos();
+        window.addEventListener('resize', function() {
+            initRefusePos();
+        });
+
+        // 拒绝按钮交互
+        refuseBtns.forEach(btn => {
+            btn.addEventListener('touchstart', function(e) {
+                handleRefuseClick(e);
+            }, { passive: false });
+
+            btn.addEventListener('click', function(e) {
+                handleRefuseClick(e);
+            });
+        });
+
+        function handleRefuseClick(e) {
+            e.preventDefault();
+            
+            refuseCount++;
+            
+            // 在点击位置创建火花效果
+            const rect = e.target.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            createSparkle(x, y);
+            
+            // 移动所有拒绝按钮到新的随机位置
+            moveAllRefuseButtons();
+            
+            // 按钮文字随机变化
+            const refuseTexts = [
+                "😠 拒绝",
+                "😤 不要",
+                "🙅‍♀️ 不行",
+                "🚫 否决",
+                "🙅 不接受",
+                "😒 再说吧",
+                "😐 考虑考虑",
+                "🤚 不要嘛",
+                "👋 再想想"
+            ];
+            
+            // 为每个按钮随机分配文字
+            refuseBtns.forEach(btn => {
+                btn.textContent = refuseTexts[Math.floor(Math.random() * refuseTexts.length)];
+            });
+            
+            // 同意按钮放大并增强效果（限制最大缩放）
+            if (acceptScale < maxAcceptScale) {
+                acceptScale += 0.05;
+                acceptBtn.style.transform = `scale(${acceptScale})`;
+                acceptBtn.style.boxShadow = `0 ${6 + Math.min(refuseCount, 20) * 2}px ${20 + Math.min(refuseCount, 20) * 5}px rgba(230, 100, 101, 0.5)`;
+            }
+
+            // 更新拒绝次数
+            refuseCountEl.textContent = refuseCount;
+            
+            // 更多样化的提示消息
+            const messages = [
+                "再考虑考虑嘛～",
+                "我真的知道错了 😢",
+                "给我一次机会好不好？",
+                "再给我一次机会",
+                "我会更加珍惜的",
+                "别这样嘛，我们和好吧",
+                "我保证会做得更好",
+                "再拒绝我就要哭了 😢",
+            ];
+            
+            // 随机选择一条消息和一首古诗
+            const messageIndex = Math.floor(Math.random() * messages.length);
+            const poemIndex = Math.floor(Math.random() * sadPoems.length);
+            
+            // 每拒绝3次显示一次古诗
+            if (refuseCount % 3 === 0) {
+                showPopup(
+                    '等一下！', 
+                    messages[messageIndex],
+                    sadPoems[poemIndex].content,
+                    sadPoems[poemIndex].author
+                );
+            } else {
+                showPopup('等一下！', messages[messageIndex]);
+            }
+        }
+
+        // 同意按钮点击
+        acceptBtn.addEventListener('click', function() {
+            createConfetti();
+            
+            // 生成随机的积极回应消息
+            const positiveMessages = [
+                "嘻嘻嘻 💝",
+                "就知道！你会同意的！",
+                "爱你！💖",
+                "终于点头了！",
+                "太开心了！",
+                "我会加倍珍惜的！",
+            ];
+            const randomMessage = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
+            
+            showPopup('太棒了！', randomMessage);
+        });
+
+        // 阻止微信下拉刷新
+        document.body.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
+    
